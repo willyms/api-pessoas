@@ -1,12 +1,13 @@
 package com.pessoas;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.springframework.boot.test.context.*;
+import org.springframework.test.context.junit.jupiter.*;
+
 @SpringBootTest
+@ExtendWith(SpringExtension.class)
 public class PessoasApplicationTests {
 
 	@Test

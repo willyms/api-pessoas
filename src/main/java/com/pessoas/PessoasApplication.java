@@ -1,15 +1,22 @@
 package com.pessoas;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
+
+import com.github.javafaker.*;
+import org.springframework.boot.*;
+import org.springframework.boot.autoconfigure.*;
+import org.springframework.context.annotation.*;
+
+import java.util.*;
 
 @SpringBootApplication
-@EntityScan(basePackageClasses = { PessoasApplication.class })
 public class PessoasApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(PessoasApplication.class, args);
 	}
 
+	@Bean
+	public Faker getFaker() {
+		return new Faker(new Locale("pt-BR"));
+	}
 }

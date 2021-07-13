@@ -1,23 +1,20 @@
 package com.pessoas.models;
 
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import lombok.*;
+import org.hibernate.validator.constraints.br.*;
 
-import org.hibernate.validator.constraints.br.CPF;
+import javax.persistence.*;
+import javax.validation.constraints.*;
+import java.io.*;
+import java.util.*;
 
 @Entity
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "pessoas")
 public class Pessoa implements Serializable {
 	
@@ -38,40 +35,6 @@ public class Pessoa implements Serializable {
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private Set<Endereco> enderecos;
 
-	public Pessoa() { }
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public String getNome() {
-		return nome;
-	}
-
-	public void setNome(String nome) {
-		this.nome = nome;
-	}
-
-	public String getCpf() {
-		return cpf;
-	}
-
-	public void setCpf(String cpf) {
-		this.cpf = cpf;
-	}
-
-	public Set<Endereco> getEnderecos() {
-		return enderecos;
-	}
-
-	public void setEnderecos(Set<Endereco> enderecos) {
-		this.enderecos = enderecos;
-	}
-	
 	public void addEnderecos(Endereco endereco) {
 		if(this.enderecos == null)
 			this.enderecos = new HashSet<>();
