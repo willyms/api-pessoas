@@ -6,3 +6,8 @@ mvnw.cmd
 mvnw
 /target
 /.idea
+/db
+db/
+/db/
+*.db
+memory

@@ -2,9 +2,12 @@ package com.pessoas.rest;
 
 import com.fasterxml.jackson.databind.*;
 import com.github.javafaker.*;
-import com.pessoas.models.*;
+import com.pessoas.models.dto.*;
 import com.pessoas.services.*;
+import com.pessoas.utils.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.test.autoconfigure.web.servlet.*;
 import org.springframework.boot.test.context.*;
@@ -12,14 +15,14 @@ import org.springframework.http.*;
 import org.springframework.test.web.servlet.*;
 import org.springframework.test.web.servlet.request.*;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Optional;
+import java.time.*;
+import java.util.stream.*;
 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -38,17 +41,19 @@ public class PessaoAPITest {
 	private Faker faker;
 
 	@BeforeEach
-	public void getContext() {
-		Pessoa pessoa = Pessoa
+	public void init() {
+		PessoaDTO pessoa = PessoaDTO
 							.builder()
-							.cpf("489.970.870-02")
-							.nome(faker.name().fullName())
+							.cpf(GeradorCPF.gerarCPFSemMascara())
+							.nome(faker.name().firstName())
+							.sobreNome(faker.name().lastName())
+							.dataNascimento("20-10-1976")
 							.build();
 
 		Address address = faker.address();
 
 		pessoa.addEnderecos(
-				Endereco
+				EnderecoDTO
 				.builder()
 						.bairro(address.country())
 						.cep(address.countryCode())
@@ -57,7 +62,10 @@ public class PessaoAPITest {
 						.endereco(address.streetAddress())
 				.build()
 		);
-        service.save(pessoa);
+
+		pessoa.addTelefones(TelefoneDTO.builder().numero(faker.phoneNumber().phoneNumber()).build());
+
+        service.inserir(pessoa);
 	}
 	
 	@Test
@@ -68,46 +76,35 @@ public class PessaoAPITest {
         		.isOk())
         		.andExpect(jsonPath("$.[*].id").isNotEmpty());
     }
-	
-	@Test
-	public void inserir_pessoa_ok() throws Exception {
-		Pessoa pessoa = new Pessoa();
-        pessoa.setNome("Tiago Luiz Isaac Fogaaa");
-        pessoa.setCpf("442.490.091-65");
-       
-        Endereco endereco = new Endereco();
-        endereco.setBairro("Recanto das Emas");
-        endereco.setCep("72630-218");
-        endereco.setCidade("Brasilia");
-        endereco.setComplemento("620");
-        endereco.setEndereco("Avenida Ponte Alta Quadra 402");
 
-        pessoa.addEnderecos(endereco);
-		
-        mockMvc.perform(MockMvcRequestBuilders
+	@ParameterizedTest(name = "#{index} - Nome: {0} {1}, CPF:{2}")
+	@MethodSource("proverCincoPessoaAleatorias")
+	public void inserir_pessoa_ok(String nome, String sobreNome, String cpf) throws Exception {
+
+		PessoaDTO pessoaDTO = PessoaDTO.builder().nome(nome).sobreNome(sobreNome).cpf(cpf).dataNascimento("20-10-1976").build();
+		pessoaDTO.addTelefones(TelefoneDTO.builder().numero(faker.phoneNumber().phoneNumber()).build());
+
+		mockMvc.perform(MockMvcRequestBuilders
         		.post(PATH_API_PESSOAS)
-        		.content(asJsonString(pessoa))
+        		.content(asJsonString(pessoaDTO))
         		.contentType(MediaType.APPLICATION_JSON_VALUE)
         		.accept(MediaType.APPLICATION_JSON))
-		      	.andExpect(status().isCreated())
-		      	.andExpect(jsonPath("$.id").exists());
+		      	.andExpect(status().isCreated());
 	}
 	
 	@Test
 	public void atualizar_pessoa_ok() throws Exception {
-		Optional<Pessoa> optional = service.findById(1L);
+		PessoaDTO pessoaDTO = service.buscarPeloId(1L);
 
-		Assertions.assertTrue(optional.isPresent());
+		Assertions.assertNotNull(pessoaDTO);
 
-		Pessoa p = optional.get();
-			   p.setNome("nome alterado");
+		pessoaDTO.setNome("nome alterado");
 		
 		mockMvc.perform(MockMvcRequestBuilders
-						.put(PATH_API_PESSOAS_WITH_ID, p.getId())
+						.put(PATH_API_PESSOAS_WITH_ID, pessoaDTO.getId())
 						.contentType(MediaType.APPLICATION_JSON_VALUE)
-						.content(asJsonString(p)))
-						.andExpect(status().isAccepted())
-						.andExpect(jsonPath("$.nome", is("nome alterado")));
+						.content(asJsonString(pessoaDTO)))
+						.andExpect(status().isOk());
 	}
 	
 	@Test
@@ -121,5 +118,16 @@ public class PessaoAPITest {
 	    } catch (Exception e) {
 	        throw new RuntimeException(e);
 	    }
+	}
+
+	private static Stream<Arguments> proverCincoPessoaAleatorias() {
+		Name pessoaFaker = new Faker().name();
+		return Stream.of(
+				Arguments.of(pessoaFaker.firstName(), pessoaFaker.lastName(), GeradorCPF.gerarCPFSemMascara()),
+				Arguments.of(pessoaFaker.firstName(), pessoaFaker.lastName(), GeradorCPF.gerarCPFSemMascara()),
+				Arguments.of(pessoaFaker.firstName(), pessoaFaker.lastName(), GeradorCPF.gerarCPFSemMascara()),
+				Arguments.of(pessoaFaker.firstName(), pessoaFaker.lastName(), GeradorCPF.gerarCPFSemMascara()),
+				Arguments.of(pessoaFaker.firstName(), pessoaFaker.lastName(), GeradorCPF.gerarCPFSemMascara())
+		);
 	}
 }

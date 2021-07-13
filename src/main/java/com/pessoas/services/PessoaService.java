@@ -1,39 +1,53 @@
 package com.pessoas.services;
 
-import java.util.List;
-import java.util.Optional;
+import com.pessoas.exception.*;
+import com.pessoas.mappear.*;
+import com.pessoas.models.*;
+import com.pessoas.models.dto.*;
+import com.pessoas.repository.*;
+import lombok.*;
+import org.springframework.stereotype.*;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.pessoas.models.Pessoa;
-import com.pessoas.repository.PessoaRepository;
+import java.util.*;
+import java.util.stream.*;
 
 @Service
+@RequiredArgsConstructor
 public class PessoaService {
 	
-	@Autowired
-	private PessoaRepository pessoaRepository;
+	private final PessoaRepository pessoaRepository;
+	private final MapearPessoa mapear;
 
-    public List<Pessoa> findAll() {
-        return pessoaRepository.findAll();
+    public List<PessoaDTO> listaTodos() {
+        return pessoaRepository.findAll().stream()
+                                .map(mapear::toDTO)
+                                .collect(Collectors.toList());
     }
 
-    public Optional<Pessoa> findById(Long id) {
-        return pessoaRepository.findById(id);
+    public PessoaDTO buscarPeloId(Long id) throws ResourceNotFoundException {
+        Pessoa pessoa = pessoaRepository.findById(id)
+                                        .orElseThrow(() -> new ResourceNotFoundException(String.format("Pessoa com ID %d não encontrada!", id)));
+
+        return mapear.toDTO(pessoa);
     }
 
-    public Pessoa save(Pessoa pessoa) {
-    	 Pessoa pessoa2 = null;
-    	try {
-    		 pessoa2 = pessoaRepository.save(pessoa);
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-		}
-        return pessoa2;
+    public MensagemRespostaDTO inserir(PessoaDTO dto) {
+        Pessoa pessoa = mapear.toModel(dto);
+        Pessoa pessoaSalvo = pessoaRepository.save(pessoa);
+        return MensagemRespostaDTO.builder().mensagem(String.format("Pessoa inserido com sucesso com o ID %d", pessoaSalvo.getId())).build();
     }
 
-    public void deleteById(Long id) {
+    public MensagemRespostaDTO atualizar(Long id, PessoaDTO pessoaDTO) throws ResourceNotFoundException {
+        pessoaRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(String.format("Pessoa com ID %d não encontrada!", id)));
+
+        Pessoa atualizadaPessoa = pessoaRepository.save(mapear.toModel(pessoaDTO));
+
+        return MensagemRespostaDTO.builder().mensagem(String.format("Pessoa atualizando com sucesso com o ID %d", atualizadaPessoa.getId())).build();
+    }
+
+    public void excluirPeloId(Long id) throws ResourceNotFoundException {
+        pessoaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(String.format("Pessoa com ID %d não encontrada!", id)));
         pessoaRepository.deleteById(id);
     }
 }

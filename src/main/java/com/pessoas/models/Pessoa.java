@@ -7,6 +7,7 @@ import org.hibernate.validator.constraints.br.*;
 import javax.persistence.*;
 import javax.validation.constraints.*;
 import java.io.*;
+import java.time.*;
 import java.util.*;
 
 @Entity
@@ -23,24 +24,16 @@ public class Pessoa implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-
-	@NotBlank
 	private String nome;
-		
-	@CPF
-	@NotBlank
+	private String sobreNome;
 	private String cpf;
+	private LocalDate dataNascimento;
+
+	@OneToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
+	private Set<Telefone> telefones;
 	
-	@NotNull
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private Set<Endereco> enderecos;
-
-	public void addEnderecos(Endereco endereco) {
-		if(this.enderecos == null)
-			this.enderecos = new HashSet<>();
-		
-		this.enderecos.add(endereco);
-	}
 
 	@Override
 	public int hashCode() {
